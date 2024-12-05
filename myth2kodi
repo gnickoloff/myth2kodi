@@ -4756,7 +4756,7 @@ generate_episode_nfo(){
 # Function to move and symlink associated image files
 move_and_symlink_images() {
   local src_file="$1"
-  local dest_dir="$2/thumbnails"
+  local dest_dir="$2/recording_images"
   local base_name="${src_file%.*}"
 
   mkdir -p "$dest_dir"
