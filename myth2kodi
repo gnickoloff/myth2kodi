@@ -4753,6 +4753,22 @@ generate_episode_nfo(){
   return 0
 } #generate_episode_nfo()
 
+# Function to move and symlink associated image files
+move_and_symlink_images() {
+  local src_file="$1"
+  local dest_dir="$2/thumbnails"
+  local base_name="${src_file%.*}"
+
+  mkdir -p "$dest_dir"
+
+  for img_file in "${base_name}".*.png "${base_name}".png; do
+    if [[ -f "$img_file" ]]; then
+      mv "$img_file" "$dest_dir/"
+      ln -s "$dest_dir/$(basename "$img_file")" "$img_file"
+    fi
+  done
+}
+
 #Processes the title and categoric ignore lists
 process_ignore_lists(){
   debug "ENTERING: ${FUNCNAME[0]}() ; CALLED FROM: ${FUNCNAME[1]}()"
@@ -5045,9 +5061,14 @@ move_mode_handling(){
   debug "ENTERING: ${FUNCNAME[0]}() ; CALLED FROM: ${FUNCNAME[1]}()"
   #Send notifications, Move the file and rename
   debug "MOVING FILE: '$RECORDING_PATH' to '$MoveDir/$ShowFileName.$ORIGINAL_EXT'"
-  mv "$RECORDING_PATH" "$MoveDir/$ShowFileName.$ORIGINAL_EXT" 2>&1 | err_pipe "'MOVE' mode: "
+  if mv "$RECORDING_PATH" "$MoveDir/$ShowFileName.$ORIGINAL_EXT"; then
+    # Move and symlink associated image files
+    move_and_symlink_images "$RECORDING_PATH" "$MoveDir"
 
-  #Check and report if file was moved
+  # Move and symlink associated image files
+  move_and_symlink_images "$RECORDING_PATH" "$MoveDir"
+
+  # Check and report if file was moved
   if [[ -e "$MoveDir/$ShowFileName.$ORIGINAL_EXT" ]]; then
     if [[ -f "$MoveDir/$ShowFileName.$ORIGINAL_EXT" ]]; then
       #Make symlink back to original file
@@ -5111,9 +5132,14 @@ move_mode_handling(){
 link_mode_handling(){
   debug "Creating link in LINK mode with CONFIDENCE:'$ConfidenceRating'"
 
-  ln -s "$RECORDING_PATH" "$MoveDir/$ShowFileName.$ORIGINAL_EXT"
+  if ln -s "$RECORDING_PATH" "$MoveDir/$ShowFileName.$ORIGINAL_EXT"; then
+    # Move and symlink associated image files
+    move_and_symlink_images "$RECORDING_PATH" "$MoveDir"
 
-  #if file was created
+  # Move and symlink associated image files
+  move_and_symlink_images "$RECORDING_PATH" "$MoveDir"
+
+  # If file was created
   if [[ -L "$MoveDir/$ShowFileName.$ORIGINAL_EXT" ]]; then
     inform "Symlink created: $MoveDir/$ShowFileName.$ORIGINAL_EXT"
     if [[ "$TRACKING" != 'Disabled' ]]; then
